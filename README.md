@@ -14,6 +14,6 @@
 ## Before
 [Calibre](https://calibre-ebook.com/ja/download) with [plug-in](https://github.com/noDRM/DeDRM_tools/releases) help us to easily convert `.azw` Kindle photobook to `.epub` format.
 
-When I changed the suffix of `.epub` to `.zip`, I got a folder includes an images folder containing all the `.jpeg` images, etc..
+After changing the suffix of the `.epub` file to `.zip`, I extracted a folder ending in `_files`, where the `images` folder contains all `.jpeg` images. 
 
 This procedure **automates** this process.
