@@ -1,7 +1,9 @@
 import os
 import zipfile
 import shutil
-from tkinter import Tk, Frame, Button, Label, filedialog, LEFT, RIGHT, TOP, BOTTOM, messagebox
+import subprocess
+from tkinter import Tk, Frame, Button, Label, filedialog, LEFT, RIGHT, TOP, BOTTOM, messagebox, Toplevel
+
 from PIL import Image
 from tkinterdnd2 import TkinterDnD, DND_FILES
 
@@ -50,12 +52,26 @@ def process_epub():
                 cover_path = os.path.join(output_dir, 'cover.jpg')
                 with open(cover_path, 'wb') as target:
                     shutil.copyfileobj(source, target)
+
+        # 找到_files结尾的文件夹
+        images_folder = None
+        for name in file_list:
+            if name.endswith('_files/'):
+                images_folder = name
+                break
+        
+        if images_folder is None:
+            messagebox.showerror("错误", "未找到_images文件夹")
+            return
         
         # 处理images文件夹中的所有文件
         for file_info in zip_ref.infolist():
-            if file_info.filename.startswith('images/') and (file_info.filename.endswith('.jpeg') or file_info.filename.endswith('.jpg') or file_info.filename.endswith('.png')):
+            if file_info.filename.startswith(f'{images_folder}images/') and (
+                file_info.filename.endswith('.jpeg') or
+                file_info.filename.endswith('.jpg') or
+                file_info.filename.endswith('.png')):
                 # 获取文件名并删除前导零
-                original_filename = file_info.filename.replace('images/', '')
+                original_filename = file_info.filename.replace(f'{images_folder}images/', '')
                 new_filename = original_filename.lstrip('0')
                 if new_filename == '':
                     new_filename = '0'
@@ -72,7 +88,7 @@ def process_epub():
                     with open(new_filepath, 'wb') as target:
                         shutil.copyfileobj(source, target)
                 
-                # 打开并重新保存图片以确保统一格式和压缩率
+                # 处理图片
                 if file_info.filename.endswith('.png'):
                     with Image.open(new_filepath) as img:
                         rgb_img = img.convert('RGB')
@@ -83,8 +99,37 @@ def process_epub():
     # 删除.zip文件
     os.remove(zip_file)
 
-    messagebox.showinfo("完成", f"图片已提取到 {output_dir}，并且已转换为.jpg格式")
-    clear_epub()
+    show_completion_dialog()
+
+def show_completion_dialog():
+    dialog = Toplevel(root)
+    dialog.title("完成")
+    dialog.geometry("300x100")
+    dialog.resizable(False, False)
+
+    # 设置窗口居中
+    window_width = 300
+    window_height = 100
+    screen_width = dialog.winfo_screenwidth()
+    screen_height = dialog.winfo_screenheight()
+    position_top = int(screen_height/2 - window_height/2)
+    position_right = int(screen_width/2 - window_width/2)
+    dialog.geometry(f'{window_width}x{window_height}+{position_right}+{position_top}')
+
+    Label(dialog, text=f"图片已提取到 {output_dir}，并且已转换为.jpg格式").pack(pady=10)
+
+    def open_output_dir():
+        subprocess.Popen(f'explorer "{output_dir}"')
+        dialog.destroy()
+
+    button_frame = Frame(dialog)
+    button_frame.pack(pady=10)
+
+    open_button = Button(button_frame, text="打开FFOutput", command=open_output_dir)
+    open_button.pack(side=LEFT, padx=5)
+
+    ok_button = Button(button_frame, text="确定", command=dialog.destroy)
+    ok_button.pack(side=RIGHT, padx=5)
 
 def drop(event):
     global epub_file
