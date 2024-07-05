@@ -9,5 +9,5 @@
 
 When I changed the suffix of `.epub` to `.zip`, I got one `cover.jpg`, and an images folder containing all the `.jpeg` images, etc..
 
- This procedure **automates** this process.
+This procedure **automates** this process.
  
