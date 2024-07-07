@@ -3,7 +3,6 @@ import zipfile
 import shutil
 import subprocess
 from tkinter import Tk, Frame, Button, Label, filedialog, LEFT, RIGHT, TOP, BOTTOM, messagebox, Toplevel
-
 from PIL import Image
 from tkinterdnd2 import TkinterDnD, DND_FILES
 
@@ -26,7 +25,7 @@ def select_epub():
     file_path = filedialog.askopenfilename(title="选择一个EPUB文件", filetypes=[("EPUB files", "*.epub")])
     if file_path:
         clear_epub()
-        epub_file = file_path
+        epub_file = os.path.normpath(file_path)
         status_label.config(text=f"已导入文件: {os.path.basename(epub_file)}")
 
 def process_epub():
@@ -36,7 +35,7 @@ def process_epub():
         return
 
     # 将.epub文件后缀改为.zip
-    zip_file = epub_file.replace('.epub', '.zip')
+    zip_file = os.path.splitext(epub_file)[0] + '.zip'
 
     # 复制文件并改名为.zip
     shutil.copy(epub_file, zip_file)
@@ -45,7 +44,7 @@ def process_epub():
     with zipfile.ZipFile(zip_file, 'r') as zip_ref:
         # 获取文件列表
         file_list = zip_ref.namelist()
-        
+
         # 处理cover.jpg文件
         if 'cover.jpg' in file_list:
             with zip_ref.open('cover.jpg') as source:
@@ -53,48 +52,44 @@ def process_epub():
                 with open(cover_path, 'wb') as target:
                     shutil.copyfileobj(source, target)
 
-        # 找到_files结尾的文件夹
-        images_folder = None
+        # 定义要处理的images文件夹列表
+        images_folders = ['images/']
         for name in file_list:
             if name.endswith('_files/'):
-                images_folder = name
-                break
-        
-        if images_folder is None:
-            messagebox.showerror("错误", "未找到_images文件夹")
-            return
-        
-        # 处理images文件夹中的所有文件
-        for file_info in zip_ref.infolist():
-            if file_info.filename.startswith(f'{images_folder}images/') and (
-                file_info.filename.endswith('.jpeg') or
-                file_info.filename.endswith('.jpg') or
-                file_info.filename.endswith('.png')):
-                # 获取文件名并删除前导零
-                original_filename = file_info.filename.replace(f'{images_folder}images/', '')
-                new_filename = original_filename.lstrip('0')
-                if new_filename == '':
-                    new_filename = '0'
-                new_filename = os.path.splitext(new_filename)[0] + '.jpg'
-                
-                # 构造新的文件路径
-                new_filepath = os.path.join(output_dir, new_filename)
-                
-                # 确保目标目录存在
-                os.makedirs(os.path.dirname(new_filepath), exist_ok=True)
-                
-                # 提取文件到临时目录
-                with zip_ref.open(file_info) as source:
-                    with open(new_filepath, 'wb') as target:
-                        shutil.copyfileobj(source, target)
-                
-                # 处理图片
-                if file_info.filename.endswith('.png'):
-                    with Image.open(new_filepath) as img:
-                        rgb_img = img.convert('RGB')
-                        rgb_img.save(new_filepath, 'JPEG', quality=95)
-                elif file_info.filename.endswith('.jpeg'):
-                    os.rename(new_filepath, new_filepath.replace('.jpeg', '.jpg'))
+                images_folders.append(f'{name}images/')
+
+        # 处理所有找到的images文件夹
+        for images_folder in images_folders:
+            for file_info in zip_ref.infolist():
+                if file_info.filename.startswith(images_folder) and (
+                    file_info.filename.endswith('.jpeg') or
+                    file_info.filename.endswith('.jpg') or
+                    file_info.filename.endswith('.png')):
+                    # 获取文件名并删除前导零
+                    original_filename = file_info.filename.replace(images_folder, '')
+                    new_filename = original_filename.lstrip('0')
+                    if new_filename == '':
+                        new_filename = '0'
+                    new_filename = os.path.splitext(new_filename)[0] + '.jpg'
+                    
+                    # 构造新的文件路径
+                    new_filepath = os.path.join(output_dir, new_filename)
+                    
+                    # 确保目标目录存在
+                    os.makedirs(os.path.dirname(new_filepath), exist_ok=True)
+                    
+                    # 提取文件到临时目录
+                    with zip_ref.open(file_info) as source:
+                        with open(new_filepath, 'wb') as target:
+                            shutil.copyfileobj(source, target)
+                    
+                    # 处理图片
+                    if file_info.filename.endswith('.png'):
+                        with Image.open(new_filepath) as img:
+                            rgb_img = img.convert('RGB')
+                            rgb_img.save(new_filepath, 'JPEG', quality=95)
+                    elif file_info.filename.endswith('.jpeg'):
+                        os.rename(new_filepath, new_filepath.replace('.jpeg', '.jpg'))
 
     # 删除.zip文件
     os.remove(zip_file)
@@ -112,8 +107,8 @@ def show_completion_dialog():
     window_height = 100
     screen_width = dialog.winfo_screenwidth()
     screen_height = dialog.winfo_screenheight()
-    position_top = int(screen_height/2 - window_height/2)
-    position_right = int(screen_width/2 - window_width/2)
+    position_top = int(screen_height / 2 - window_height / 2)
+    position_right = int(screen_width / 2 - window_width / 2)
     dialog.geometry(f'{window_width}x{window_height}+{position_right}+{position_top}')
 
     Label(dialog, text=f"图片已提取到 {output_dir}，并且已转换为.jpg格式").pack(pady=10)
@@ -134,7 +129,7 @@ def show_completion_dialog():
 def drop(event):
     global epub_file
     clear_epub()
-    epub_file = event.data
+    epub_file = os.path.normpath(event.data.strip("{}"))
     status_label.config(text=f"已导入文件: {os.path.basename(epub_file)}")
 
 # 创建主窗口
