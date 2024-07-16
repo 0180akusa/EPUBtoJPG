@@ -56,12 +56,10 @@ def process_epub():
 
         # Delete .zip file
         os.remove(zip_file)
-
-        # show_completion_dialog()
-
+        status_label.config(text="EPUB processed into FFOutput") 
     except Exception as e:
         messagebox.showerror("Error", f"Error processing EPUB file: {e}")
-
+    
 def process_image(zip_ref, file_info, images_folder):
     # Get filename and remove leading zeros
     original_filename = file_info.filename.replace(images_folder, '')
@@ -86,7 +84,6 @@ def process_image(zip_ref, file_info, images_folder):
     elif file_info.filename.lower().endswith('.jpeg'):
         os.rename(new_filepath, new_filepath.replace('.jpeg', '.jpg'))
 
-
 def pack_folder():
     target_dir = os.path.join(OUTPUT_DIR, "digital")
     os.makedirs(target_dir, exist_ok=True)
@@ -97,7 +94,8 @@ def pack_folder():
         if source_item != target_dir:
             shutil.move(source_item, os.path.join(target_dir, item))
     
-    messagebox.showinfo("Completed", f"All files have been moved to {target_dir}")
+    # messagebox.showinfo("Completed", f"All files have been moved to {target_dir}")
+    status_label.config(text="All images packed into digital")
 
 def drop(event):
     global epub_file
@@ -127,7 +125,8 @@ def are_images_edge_similar(img1, img2, column1, column2, threshold):
 def check_images_in_directory(directory):
     resolution = get_image_resolution(directory)
     if resolution is None:
-        print("No valid images found in the directory.")
+        # print("No valid images found in the directory.")
+        status_label.config(text="No valid images found")
         return
     
     height, width, channels = resolution
@@ -176,6 +175,7 @@ def check_images_in_directory(directory):
                     processed_files.add(file)
             else:
                 print(f"{file_even} and {file_odd} do not appear to be from the same original image.")
+    status_label.config(text="Images Stitched")
 
 def auto_img_stitch():
     check_images_in_directory(OUTPUT_DIR)
@@ -186,7 +186,7 @@ root.title("EPUB Image Extractor Tool")
 root.geometry("400x600")  # 400x600 aspect ratio
 
 # Top frame for drop area
-top_frame = Frame(root, width=400, height=200, bg="lightgrey")
+top_frame = Frame(root, width=400, height=300, bg="lightgrey")
 top_frame.pack_propagate(False)
 top_frame.pack(side=TOP, fill="x")
 
@@ -199,20 +199,20 @@ style = ttk.Style()
 style.theme_use('clam')
 
 # Styple for ButtonNo1
-style.configure('ButtonNo1.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#5fa8cc')
-style.map('ButtonNo1.TButton',background=[('active','#81001E')])
+style.configure('ButtonNo1.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#000000')
+style.map('ButtonNo1.TButton', foreground=[('active','#000000')], background=[('active','#FFA500')])
 
 # Styple for ButtonNo2
-style.configure('ButtonNo2.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#449a7f')
-style.map('ButtonNo2.TButton',background=[('active','#81001E')])
+style.configure('ButtonNo2.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#000000')
+style.map('ButtonNo2.TButton', foreground=[('active','#000000')], background=[('active','#FFA500')])
 
 # Styple for ButtonNo3
-style.configure('ButtonNo3.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#266047')
-style.map('ButtonNo3.TButton',background=[('active','#81001E')])
+style.configure('ButtonNo3.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#000000')
+style.map('ButtonNo3.TButton', foreground=[('active','#000000')], background=[('active','#FFA500')])
 
 # Styple for ButtonNo4
-style.configure('ButtonNo4.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#10411a')
-style.map('ButtonNo4.TButton',background=[('active','#81001E')])
+style.configure('ButtonNo4.TButton',foreground='#FFFFFF', font=('Helvetica', 12, 'bold'), background='#81001E')
+style.map('ButtonNo4.TButton', foreground=[('active','#000000')], background=[('active','#FFA500')])
 
 # Drop hint label
 drop_label = Label(top_frame, bg="lightgrey")
@@ -220,24 +220,25 @@ drop_label.pack(expand=True)
 
 # Center the "Select EPUB File" button within the drop area
 select_button = ttk.Button(top_frame, text="Select EPUB", style= 'ButtonNo1.TButton', command=select_epub)
+select_button.pack(fill="x", padx=400//4, pady=10)
 
 select_button.place(relx=0.5, rely=0.5, anchor='center')
 
 # Status label
 status_label = Label(root, text="No file imported")
-status_label.pack(pady=10)
+status_label.pack(fill="x", padx=400//4, pady=10)
 
 # Process file button
 process_button = ttk.Button(main_frame, text="Process EPUB", style='ButtonNo2.TButton', command=process_epub)
-process_button.pack(pady=10)
+process_button.pack(fill="x", padx=400//4, pady=10)
 
 # AutoImgStitch button
 auto_img_stitch_button = ttk.Button(main_frame, text="Auto Stitch (Test)", style='ButtonNo3.TButton', command=auto_img_stitch)
-auto_img_stitch_button.pack(pady=10)
+auto_img_stitch_button.pack(fill="x", padx=400//4, pady=10)
 
 # PackFolder button
 pack_folder_button = ttk.Button(main_frame, text="Pack to digital", style='ButtonNo4.TButton', command=pack_folder)
-pack_folder_button.pack(pady=10)
+pack_folder_button.pack(fill="x", padx=400//4, pady=10)
 
 # Enable drag and drop
 root.drop_target_register(DND_FILES)
